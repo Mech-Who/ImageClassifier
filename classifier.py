@@ -104,6 +104,14 @@ def organize_images(input_dir, move_files=False):
 
 
 if __name__ == "__main__":
+    """
+    使用说明：
+        对于给定目录中的文件进行分类，按照sim前的数字编号划分到对应的类中。可以通过move参数指定以移动或者复制的形式对文件进行分类。
+        示例：`uv run classifier.py "G:/path/to/images/folder" -m` 表示以移动的方式将"G:/path/to/images/folder"目录下的文件进行分类
+    作者：胡舒涵
+    历史记录：
+    2025-06-18  胡舒涵  创建脚本。
+    """
     parser = argparse.ArgumentParser(description="根据文件名中的类别编号整理图像")
     parser.add_argument("directory", help="包含图像的目录路径")
     parser.add_argument(
