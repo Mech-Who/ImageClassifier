@@ -257,7 +257,7 @@ class ImageClassifierApp:
         logger.debug(f"queue=[{msg}]")
         logger.debug(f"current_image={self.image_files[self.current_index]}")
         if not self.image_files or self.current_index < 0:
-            self.image_label.config(image=None)
+            self.image_canvas.config(image=None)
             return
         if len(self.command_queue) > 0:
             queue_texts = [f"{item.filename}({'相似' if item.is_similar else '不相似'})" for item in self.command_queue]
