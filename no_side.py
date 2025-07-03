@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import shutil
+from collections import deque
 
 
 class Command:
@@ -11,16 +12,55 @@ class Command:
     def execute(self):
         pass
 
+    def undo(self):
+        pass
+
 
 class MoveImageCommand(Command):
     """移动图片命令"""
 
-    def __init__(self, app, is_similar):
+    def __init__(self, app, is_similar, filename):
         self.app = app
         self.is_similar = is_similar
+        self.filename = filename
+        self.src_path = os.path.join(app.current_dir, filename)
+        self.target_dir = app.similar_dir if is_similar else app.dissimilar_dir
+        self.dest_path = os.path.join(self.target_dir, filename)
 
     def execute(self):
-        self.app.move_image(self.is_similar)
+        os.makedirs(self.target_dir, exist_ok=True)
+        shutil.move(self.src_path, self.dest_path)
+        self.app.image_files.remove(self.filename)
+
+    def undo(self):
+        shutil.move(self.dest_path, self.src_path)
+        self.app.image_files.append(self.filename)
+        self.app.image_files.sort()
+
+
+class CommandQueue:
+    """命令队列"""
+
+    def __init__(self, max_length=3):
+        self.queue = deque(maxlen=max_length)
+
+    def add_command(self, command):
+        if len(self.queue) == self.queue.maxlen:
+            self.queue.popleft().execute()
+        self.queue.append(command)
+
+    def execute_all(self):
+        while self.queue:
+            self.queue.popleft().execute()
+
+    def undo_last(self) -> bool:
+        if self.queue:
+            self.queue.pop()
+            return True
+        return False
+
+    def get_commands(self):
+        return list(self.queue)
 
 
 class ImageClassifierApp:
@@ -36,18 +76,27 @@ class ImageClassifierApp:
         self.similar_dir = ""
         self.dissimilar_dir = ""
 
+        # 命令队列
+        self.command_queue = CommandQueue()
+
         # 创建UI控件
         self.create_widgets()
 
         # 绑定键盘事件
         self.root.bind("<Left>", lambda event: self.prev_image())
         self.root.bind("<Right>", lambda event: self.next_image())
-        self.root.bind(
-            "<s>", lambda event: self.execute_command(MoveImageCommand(self, True))
-        )
-        self.root.bind(
-            "<d>", lambda event: self.execute_command(MoveImageCommand(self, False))
-        )
+        self.root.bind("<s>", lambda event: self.add_move_command(True))
+        self.root.bind("<d>", lambda event: self.add_move_command(False))
+        self.root.bind("<z>", lambda event: self.undo_last_command())
+        self.root.bind("<c>", lambda event: self.clear_command_queue())
+
+        # 绑定关闭事件
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def on_close(self):
+        """关闭程序时执行队列中的所有命令"""
+        self.command_queue.execute_all()
+        self.root.destroy()
 
     def create_widgets(self):
         # 顶部操作区域
@@ -85,7 +134,7 @@ class ImageClassifierApp:
             width=10,
             height=2,
             state=tk.DISABLED,
-            command=lambda: self.execute_command(MoveImageCommand(self, True)),
+            command=lambda: self.add_move_command(True),
         )
         self.similar_btn.pack(side=tk.LEFT, padx=10)
 
@@ -96,19 +145,65 @@ class ImageClassifierApp:
             width=10,
             height=2,
             state=tk.DISABLED,
-            command=lambda: self.execute_command(MoveImageCommand(self, False)),
+            command=lambda: self.add_move_command(False),
         )
         self.dissimilar_btn.pack(side=tk.LEFT, padx=10)
+
+        tk.Button(
+            btn_frame, text="撤回", width=10, command=self.undo_last_command
+        ).pack(side=tk.LEFT, padx=10)
+
+        tk.Button(
+            btn_frame, text="清空队列", width=10, command=self.clear_command_queue
+        ).pack(side=tk.LEFT, padx=10)  # 添加清空队列按钮
 
         tk.Button(btn_frame, text="下一张 →", width=10, command=self.next_image).pack(
             side=tk.RIGHT, padx=40
         )
 
-    def execute_command(self, command):
-        """执行命令"""
-        command.execute()
+        # 显示命令队列
+        self.queue_var = tk.StringVar(value="队列: []")
+        tk.Label(self.root, textvariable=self.queue_var, fg="blue").pack(pady=5)
+
+    def update_queue_display(self):
+        commands = [
+            f"{cmd.filename} ({'相似' if cmd.is_similar else '不相似'})"
+            for cmd in self.command_queue.get_commands()
+        ]
+        self.queue_var.set(f"队列: {commands}")
+
+    def add_move_command(self, is_similar):
+        if self.current_index < 0 or not self.image_files:
+            return
+
+        filename = self.image_files[self.current_index]
+        command = MoveImageCommand(self, is_similar, filename)
+        self.command_queue.add_command(command)
+
+        # 更新图片显示
+        self.current_index += 1
+        if self.current_index >= len(self.image_files):
+            self.current_index = len(self.image_files) - 1
+        self.show_current_image()
+
+        # 更新队列显示
+        self.update_queue_display()
+
+    def undo_last_command(self):
+        if self.command_queue.undo_last():
+            self.current_index -= 1
+        self.update_queue_display()
+        self.show_current_image()
+
+    # 添加清空队列的方法
+    def clear_command_queue(self):
+        self.command_queue.queue.clear()
+        self.update_queue_display()
 
     def open_directory(self):
+        # 执行队列中的所有命令
+        self.command_queue.execute_all()
+
         directory = filedialog.askdirectory(title="选择图片文件夹")
         if not directory:
             return
@@ -135,6 +230,7 @@ class ImageClassifierApp:
 
     def show_current_image(self):
         if not self.image_files or self.current_index < 0:
+            self.image_label.config(image=None)
             return
 
         img_path = os.path.join(self.current_dir, self.image_files[self.current_index])
@@ -184,36 +280,6 @@ class ImageClassifierApp:
             return
         self.current_index += 1
         self.show_current_image()
-
-    def move_image(self, is_similar):
-        if self.current_index < 0 or not self.image_files:
-            return
-
-        # 创建目录（如果需要）
-        target_dir = self.similar_dir if is_similar else self.dissimilar_dir
-        os.makedirs(target_dir, exist_ok=True)
-
-        # 移动文件
-        filename = self.image_files[self.current_index]
-        src_path = os.path.join(self.current_dir, filename)
-        dest_path = os.path.join(target_dir, filename)
-
-        try:
-            shutil.move(src_path, dest_path)
-
-            # 更新列表和索引
-            del self.image_files[self.current_index]
-            if not self.image_files:
-                self.current_index = -1
-                self.update_buttons_state(tk.DISABLED)
-                self.image_label.config(image=None)
-                self.status_var.set("已完成所有图片分类!")
-            else:
-                if self.current_index >= len(self.image_files):
-                    self.current_index = len(self.image_files) - 1
-                self.show_current_image()
-        except Exception as e:
-            print(f"移动文件失败: {e}")
 
     def update_buttons_state(self, state):
         self.similar_btn.config(state=state)
