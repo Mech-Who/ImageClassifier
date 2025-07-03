@@ -5,46 +5,46 @@ import argparse
 
 # 定义类别名称映射表
 CATEGORIES = {
-    0: "German shepherd",
-    1: "Egyptian cat",
-    2: "lycaenid",
-    3: "sorrel",
-    4: "capuchin",
-    5: "African elephant",
-    6: "giant panda",
-    7: "anemone fish",
-    8: "airliner",
-    9: "broom",
-    10: "canoe",
-    11: "cellular telephone",
-    12: "coffee mug",
-    13: "convertible",
-    14: "desktop computer",
-    15: "watch",
-    16: "electric guitar",
-    17: "electric locomotive",
-    18: "espresso maker",
-    19: "folding chair",
-    20: "golf ball",
-    21: "grand piano",
-    22: "iron",
-    23: "jack-o-lantern",
-    24: "mailbag",
-    25: "missile",
-    26: "mitten",
-    27: "mountain bike",
-    28: "mountain tent",
-    29: "pajama",
-    30: "parachute",
-    31: "pool table",
-    32: "radio telescope",
-    33: "reflex camera",
-    34: "revolver",
-    35: "running shoe",
-    36: "banana",
-    37: "pizza",
-    38: "daisy",
-    39: "bolete",
+    0: "German shepherd",  # 德国牧羊犬
+    1: "Egyptian cat",  # 缅甸猫
+    2: "lycaenid",  # 灰蝶
+    3: "sorrel",  # 栗色马
+    4: "capuchin",  # 金丝猴
+    5: "African elephant",  # 非洲大象
+    6: "giant panda",  # 大熊猫
+    7: "anemone fish",  # 小丑鱼
+    8: "airliner",  # 客机
+    9: "broom",  # 扫帚
+    10: "canoe",  # 独木舟
+    11: "cellular telephone",  # 蜂巢电话
+    12: "coffee mug",  # 咖啡杯
+    13: "convertible",  # 敞篷车
+    14: "desktop computer",  # 台式计算机
+    15: "watch",  # 手表 -> 电吉他 electric guitar
+    16: "electric guitar",  # 电吉他 -> 电力机车 electric locomotive
+    17: "electric locomotive",  #  电力机车 -> 浓缩咖啡机 espresso maker
+    18: "espresso maker",  # 浓缩咖啡机 -> 折叠椅 folding chair
+    19: "folding chair",  # 折叠椅 -> 高尔夫球 golf ball
+    20: "golf ball",  # 高尔夫球 -> 钢琴 grand piano
+    21: "grand piano",  # 钢琴 -> 熨斗 iron
+    22: "iron",  # 熨斗 -> 南瓜灯 jack-o-lantern
+    23: "jack-o-lantern",  # 南瓜灯 -> 邮袋 mailbag
+    24: "mailbag",  # 邮袋 -> 导弹 missile
+    25: "missile",  # 导弹 -> 手套 mitten
+    26: "mitten",  # 手套 -> 山地自行车 mountain bike
+    27: "mountain bike",  # 山地自行车 -> 山地帐篷 mountain tent
+    28: "mountain tent",  # 山地帐篷 -> 睡衣 pajama
+    29: "pajama",  # 睡衣 ->  降落伞 parachute
+    30: "parachute",  # 降落伞 -> 台球桌 pool table
+    31: "pool table",  # 台球桌 ->  射电望远镜 radio telescope
+    32: "radio telescope",  # 射电望远镜 -> 反光照相机 reflex camera
+    33: "reflex camera",  # 反光照相机 -> 左轮手枪 revolver
+    34: "revolver",  # 左轮手枪 -> 跑步鞋 pajrunning shoeama
+    35: "running shoe",  # 跑步鞋 -> 手表 watch
+    36: "banana",  # 香蕉
+    37: "pizza",  # 披萨
+    38: "daisy",  # 雏菊
+    39: "bolete",  # 牛肝菌
 }
 
 
@@ -74,7 +74,7 @@ def organize_images(input_dir, move_files=False):
             continue
 
         # 提取类别编号
-        match = re.match(r'.*_(\d+)_sim.*', filename)
+        match = re.match(r".*_(\d+)_sim.*", filename)
         if not match:
             print(f"警告：文件 '{filename}' 不符合命名规则，跳过")
             continue
