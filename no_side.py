@@ -119,13 +119,23 @@ class ImageClassifierApp:
         try:
             # 加载图片并调整大小
             img = Image.open(img_path)
-            width, height = img.size
-            max_size = 800
-            if max(width, height) > max_size:
-                ratio = max_size / max(width, height)
-                img = img.resize(
-                    (int(width * ratio), int(height * ratio)), Image.LANCZOS
-                )
+
+            # 获取窗口的宽高
+            window_width = self.img_frame.winfo_width()
+            window_height = self.img_frame.winfo_height()
+
+            # 调整图片大小以适应窗口
+            img_ratio = img.size[0] / img.size[1]
+            window_ratio = window_width / window_height
+
+            if img_ratio > window_ratio:
+                new_width = window_width
+                new_height = int(new_width / img_ratio)
+            else:
+                new_height = window_height
+                new_width = int(new_height * img_ratio)
+
+            img = img.resize((new_width, new_height), Image.LANCZOS)
 
             # 显示图片
             photo = ImageTk.PhotoImage(img)
