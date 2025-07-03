@@ -5,17 +5,29 @@ from PIL import Image, ImageTk
 import shutil
 
 
+class Command:
+    """命令基类"""
+
+    def execute(self):
+        pass
+
+
+class MoveImageCommand(Command):
+    """移动图片命令"""
+
+    def __init__(self, app, is_similar):
+        self.app = app
+        self.is_similar = is_similar
+
+    def execute(self):
+        self.app.move_image(self.is_similar)
+
+
 class ImageClassifierApp:
     def __init__(self, root):
         self.root = root
         self.root.title("图片分类工具")
         self.root.geometry("900x700")
-
-        # 绑定键盘事件
-        self.root.bind("<Left>", self.prev_image)
-        self.root.bind("<Right>", self.next_image)
-        self.root.bind("<s>", lambda event: self.move_image(True))  # 绑定 S 键
-        self.root.bind("<d>", lambda event: self.move_image(False))  # 绑定 D 键
 
         # 状态变量
         self.image_files = []
@@ -28,8 +40,14 @@ class ImageClassifierApp:
         self.create_widgets()
 
         # 绑定键盘事件
-        self.root.bind("<Left>", self.prev_image)
-        self.root.bind("<Right>", self.next_image)
+        self.root.bind("<Left>", lambda event: self.prev_image())
+        self.root.bind("<Right>", lambda event: self.next_image())
+        self.root.bind(
+            "<s>", lambda event: self.execute_command(MoveImageCommand(self, True))
+        )
+        self.root.bind(
+            "<d>", lambda event: self.execute_command(MoveImageCommand(self, False))
+        )
 
     def create_widgets(self):
         # 顶部操作区域
@@ -67,7 +85,7 @@ class ImageClassifierApp:
             width=10,
             height=2,
             state=tk.DISABLED,
-            command=lambda: self.move_image(True),
+            command=lambda: self.execute_command(MoveImageCommand(self, True)),
         )
         self.similar_btn.pack(side=tk.LEFT, padx=10)
 
@@ -78,13 +96,17 @@ class ImageClassifierApp:
             width=10,
             height=2,
             state=tk.DISABLED,
-            command=lambda: self.move_image(False),
+            command=lambda: self.execute_command(MoveImageCommand(self, False)),
         )
         self.dissimilar_btn.pack(side=tk.LEFT, padx=10)
 
         tk.Button(btn_frame, text="下一张 →", width=10, command=self.next_image).pack(
             side=tk.RIGHT, padx=40
         )
+
+    def execute_command(self, command):
+        """执行命令"""
+        command.execute()
 
     def open_directory(self):
         directory = filedialog.askdirectory(title="选择图片文件夹")
@@ -151,13 +173,13 @@ class ImageClassifierApp:
         except Exception as e:
             print(f"Error loading image: {e}")
 
-    def prev_image(self, event=None):
+    def prev_image(self):
         if not self.image_files or self.current_index <= 0:
             return
         self.current_index -= 1
         self.show_current_image()
 
-    def next_image(self, event=None):
+    def next_image(self):
         if not self.image_files or self.current_index >= len(self.image_files) - 1:
             return
         self.current_index += 1
