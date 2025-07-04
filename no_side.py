@@ -11,11 +11,9 @@ from loguru import logger
 
 class Command:
     @abstractmethod
-    def execute():
-        ...
+    def execute(): ...
     @abstractmethod
-    def undo():
-        ...
+    def undo(): ...
 
 
 class MoveCommand(Command):
@@ -47,7 +45,7 @@ class MoveCommand(Command):
 
 
 class ImageClassifierApp:
-    def __init__(self, root, max_buffer: int=3):
+    def __init__(self, root, max_buffer: int = 3):
         self.root = root
         self.max_buffer = max_buffer
         # Basic Info
@@ -157,7 +155,8 @@ class ImageClassifierApp:
         self.clear_queue_btn.pack(side=tk.RIGHT, padx=10)
 
         # Bottom Frame
-        bottom_frame = tk.Frame(self.root, bg="#f0f0f0", pady=15)
+        bottom_frame = tk.Frame(self.root, pady=15)
+        bottom_frame.pack(fill=tk.X)
         ## Queue Text
         self.queue_text = tk.StringVar()
         tk.Label(bottom_frame, textvariable=self.queue_text, fg="gray").pack(
@@ -213,7 +212,12 @@ class ImageClassifierApp:
 
         # 移动文件
         filename = self.image_files[self.current_index]
-        command = MoveCommand(filename, src_dir=str(self.current_dir), dst_dir=str(target_dir), is_similar=is_similar)
+        command = MoveCommand(
+            filename,
+            src_dir=str(self.current_dir),
+            dst_dir=str(target_dir),
+            is_similar=is_similar,
+        )
         if len(self.command_queue) == self.max_buffer:
             command = self.command_queue.popleft()
             command.execute()
@@ -253,14 +257,19 @@ class ImageClassifierApp:
     # Operations
     def show_current_image(self):
         logger.debug(f"img_files={self.image_files[:5]}")
-        msg = ",".join([f"{com.filename}(sim-{com.is_similar})" for com in self.command_queue])
+        msg = ",".join(
+            [f"{com.filename}(sim-{com.is_similar})" for com in self.command_queue]
+        )
         logger.debug(f"queue=[{msg}]")
         logger.debug(f"current_image={self.image_files[self.current_index]}")
         if not self.image_files or self.current_index < 0:
             self.image_canvas.config(image=None)
             return
         if len(self.command_queue) > 0:
-            queue_texts = [f"{item.filename}({'相似' if item.is_similar else '不相似'})" for item in self.command_queue]
+            queue_texts = [
+                f"{item.filename}({'相似' if item.is_similar else '不相似'})"
+                for item in self.command_queue
+            ]
             self.queue_text.set(f"[{','.join(queue_texts)}]")
         else:
             self.queue_text.set("[]")
