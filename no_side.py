@@ -53,16 +53,16 @@ class ImageClassifierApp:
         self.root.geometry("900x700")
 
         # Bind Keyboard Event
-        self.root.bind("<Left>", self.prev_image)
-        self.root.bind("<Right>", self.next_image)
         self.root.bind("<s>", lambda event: self.move_image(True))  # 绑定 S 键
         self.root.bind("<d>", lambda event: self.move_image(False))  # 绑定 D 键
         self.root.bind("<z>", lambda event: self.undo_command())  # 绑定 Z 键
         self.root.bind("<c>", lambda event: self.clear_queue())  # 绑定 C 键
+        # 绑定关闭事件
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # State Variables
-        self.image_files = []
-        self.current_index = -1
+        self.image_files = deque()
+        self.current_image = None
         self.current_dir = None
         self.similar_dir = None
         self.dissimilar_dir = None
@@ -71,7 +71,7 @@ class ImageClassifierApp:
         # Create UI Widgets
         self.create_widgets()
 
-    def create_widgets(self):
+    def create_widgets(self) -> None:
         # Top Frame
         top_frame = tk.Frame(self.root, pady=10)
         top_frame.pack(fill=tk.X)
@@ -101,10 +101,6 @@ class ImageClassifierApp:
         # Bottom Button Frame
         btn_frame = tk.Frame(self.root, pady=15)
         btn_frame.pack(fill=tk.X)
-        ## Prev Image Button
-        tk.Button(btn_frame, text="← 上一张", width=10, command=self.prev_image).pack(
-            side=tk.LEFT, padx=40
-        )
         ## Similar Button
         self.similar_btn = tk.Button(
             btn_frame,
@@ -127,10 +123,6 @@ class ImageClassifierApp:
             command=lambda: self.move_image(False),
         )
         self.dissimilar_btn.pack(side=tk.LEFT, padx=10)
-        ## Next Image Button
-        tk.Button(btn_frame, text="下一张 →", width=10, command=self.next_image).pack(
-            side=tk.RIGHT, padx=40
-        )
         ## Undo Button
         self.undo_btn = tk.Button(
             btn_frame,
@@ -163,8 +155,12 @@ class ImageClassifierApp:
             side=tk.BOTTOM, padx=10
         )
 
+    def on_close(self) -> None:
+        self.clear_queue()
+        self.root.destroy()
+
     # Button Event
-    def open_directory(self):
+    def open_directory(self) -> None:
         directory = filedialog.askdirectory(title="选择图片文件夹")
         if not directory:
             return
@@ -175,35 +171,25 @@ class ImageClassifierApp:
         self.dissimilar_dir = directory / "不相似"
 
         # 获取所有支持的图片文件
-        self.image_files = [
+        all_images = [
             f
             for f in os.listdir(directory)
             if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp"))
         ]
-        self.image_files.sort()
+        all_images.sort()
+        self.image_files.extend(all_images)
 
-        if not self.image_files:
+        if len(self.image_files) == 0:
             self.status_text.set("目录中没有找到图片文件")
             return
 
-        self.current_index = 0
         self.update_buttons_state(tk.NORMAL)
-        self.show_current_image()
 
-    def prev_image(self, event=None):
-        if not self.image_files or self.current_index <= 0:
-            return
-        self.current_index -= 1
-        self.show_current_image()
-
-    def next_image(self, event=None):
-        if not self.image_files or self.current_index >= len(self.image_files) - 1:
-            return
-        self.current_index += 1
+        self.current_image = self.image_files.popleft()
         self.show_current_image()
 
     def move_image(self, is_similar):
-        if self.current_index < 0 or not self.image_files:
+        if len(self.image_files) == 0:
             return
 
         # 创建目录（如果需要）
@@ -211,37 +197,33 @@ class ImageClassifierApp:
         target_dir.mkdir(parents=True, exist_ok=True)
 
         # 移动文件
-        filename = self.image_files[self.current_index]
         command = MoveCommand(
-            filename,
+            filename=self.current_image,
             src_dir=str(self.current_dir),
             dst_dir=str(target_dir),
             is_similar=is_similar,
         )
         if len(self.command_queue) == self.max_buffer:
-            command = self.command_queue.popleft()
-            command.execute()
-            self.image_files.remove(command.filename)
-            self.current_index -= 1
+            pop_command = self.command_queue.popleft()
+            pop_command.execute()
         self.command_queue.append(command)
-        self.current_index += 1
 
         # 更新列表和索引
-        if len(self.image_files) == 0:
-            self.current_index = -1
+        if len(self.image_files) > 0:
+            self.current_image = self.image_files.popleft()
+        else:
+            self.current_image = None
             self.update_buttons_state(tk.DISABLED)
             self.image_canvas.config(image=None)
             self.status_text.set(f"分类完毕! {str(self.current_dir)}")
-        else:
-            if self.current_index >= len(self.image_files):
-                self.current_index = len(self.image_files) - 1
-            self.show_current_image()
+        self.show_current_image()
 
     def undo_command(self):
         if len(self.command_queue) <= 0:
             return
-        self.command_queue.pop()
-        self.current_index -= 1
+        command = self.command_queue.pop()
+        self.image_files.appendleft(self.current_image)
+        self.current_image = command.filename
         self.show_current_image()
 
     def clear_queue(self):
@@ -250,21 +232,20 @@ class ImageClassifierApp:
         while len(self.command_queue) > 0:
             command = self.command_queue.pop()
             command.execute()
-            self.image_files.remove(command.filename)
-            self.current_index -= 1
         self.show_current_image()
 
     # Operations
     def show_current_image(self):
-        logger.debug(f"img_files={self.image_files[:5]}")
+        logger.debug("===== [show current] =====")
+        logger.debug(f"img_files={list(self.image_files)[:5]}")
         msg = ",".join(
             [f"{com.filename}(sim-{com.is_similar})" for com in self.command_queue]
         )
         logger.debug(f"queue=[{msg}]")
-        logger.debug(f"current_image={self.image_files[self.current_index]}")
-        if not self.image_files or self.current_index < 0:
-            self.image_canvas.config(image=None)
+        logger.debug(f"current_image={self.current_image}")
+        if len(self.image_files) == 0 and self.current_image is None:
             return
+        # Queue Text
         if len(self.command_queue) > 0:
             queue_texts = [
                 f"{item.filename}({'相似' if item.is_similar else '不相似'})"
@@ -273,9 +254,9 @@ class ImageClassifierApp:
             self.queue_text.set(f"[{','.join(queue_texts)}]")
         else:
             self.queue_text.set("[]")
-
-        self.image_name.set(self.image_files[self.current_index])
-        img_path = self.current_dir / self.image_files[self.current_index]
+        # Image Name
+        self.image_name.set(self.current_image)
+        img_path = self.current_dir / self.current_image
         try:
             # 加载图片并调整大小
             img = Image.open(str(img_path))
@@ -302,13 +283,13 @@ class ImageClassifierApp:
             self.image_canvas.config(image=photo)
             self.image_canvas.image = photo
 
-            # 更新状态
-            self.status_text.set(
-                f"{self.current_index + 1}/{len(self.image_files)}: "
-                f"{self.current_dir.name} "
-            )
         except Exception as e:
-            print(f"Error loading image: {e}")
+            logger.exception(f"Error loading image: {e}")
+        # 更新状态
+        total_image = len(self.image_files)
+        if self.current_image:
+            total_image += 1
+        self.status_text.set(f"{total_image}: {self.current_dir.name}")
 
     def update_buttons_state(self, state):
         self.similar_btn.config(state=state)
