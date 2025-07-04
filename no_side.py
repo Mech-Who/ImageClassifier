@@ -189,7 +189,7 @@ class ImageClassifierApp:
         self.show_current_image()
 
     def move_image(self, is_similar):
-        if len(self.image_files) == 0:
+        if self.current_image is None:
             return
 
         # 创建目录（如果需要）
@@ -243,7 +243,7 @@ class ImageClassifierApp:
         )
         logger.debug(f"queue=[{msg}]")
         logger.debug(f"current_image={self.current_image}")
-        if len(self.image_files) == 0 and self.current_image is None:
+        if self.current_image is None:
             return
         # Queue Text
         if len(self.command_queue) > 0:
@@ -294,8 +294,6 @@ class ImageClassifierApp:
     def update_buttons_state(self, state):
         self.similar_btn.config(state=state)
         self.dissimilar_btn.config(state=state)
-        self.undo_btn.config(state=state)
-        self.clear_queue_btn.config(state=state)
 
 
 if __name__ == "__main__":
