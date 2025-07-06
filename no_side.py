@@ -130,7 +130,7 @@ class ImageClassifierApp:
             bg="#d1c9c9",
             width=10,
             height=2,
-            state=tk.DISABLED,
+            state=tk.NORMAL,
             command=lambda: self.undo_command(),
         )
         self.undo_btn.pack(side=tk.RIGHT, padx=10)
@@ -141,7 +141,7 @@ class ImageClassifierApp:
             bg="#f85c5c",
             width=10,
             height=2,
-            state=tk.DISABLED,
+            state=tk.NORMAL,
             command=lambda: self.clear_queue(),
         )
         self.clear_queue_btn.pack(side=tk.RIGHT, padx=10)
