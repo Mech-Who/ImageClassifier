@@ -150,9 +150,9 @@ if __name__ == "__main__":
     from json import dump
 
     # 替换为你的数据集根目录路径
-    base_directory = r"G:\南科大可视化图片（普渡_弗罗里达）"
-    json_file = r"D:\Project\uvProjects\ImageClassifier\logs\statistics.json"
-    excel_file = r"d:\Project\uvProjects\ImageClassifier\logs\image_data.xlsx"
+    base_directory = r"D:\南科大可视化图片（普渡_弗罗里达）筛选"
+    json_file = rf"{base_directory}\statistics.json"
+    excel_file = rf"{base_directory}\image_data.xlsx"
 
     stats, records = count_images(base_directory)
 

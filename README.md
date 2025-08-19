@@ -20,6 +20,11 @@
   - 有侧边栏版本，要求能够查看当前目录结构
     - 在无侧边栏的基础上，每次操作相似或不相似都会对应更新侧边栏中展示的目录结构。
 
+统计需求：
+
+- 使用class_statistics.py将会统计当前的2个数据集目录下的图片文件的数量并生成statistics.json和image_data.xlsx文件。
+- json2excel.py文件则根据前一步生成的statistics.json文件，制作statistics.xlsx文件，以excel的方式展示统计结果。
+
 ## 目录结构
 
 虽然创建了目录结构，但是核心代码由于都是一个个简单脚本，因此都放在项目的根目录下。

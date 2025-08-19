@@ -17,7 +17,7 @@ def json_to_excel(json_file, output_file):
 
     # 遍历数据集
     for dataset_name, dataset_info in data["datasets"].items():
-        if dataset_name == "弗罗里达":
+        if dataset_name == "弗罗里达generated":
             for category_name, category_info in dataset_info["categories"].items():
                 rows.append(
                     {
@@ -77,10 +77,11 @@ def json_to_excel(json_file, output_file):
 
 
 if __name__ == "__main__":
+    base_directory = r"D:\南科大可视化图片（普渡_弗罗里达）筛选"
     # JSON 文件路径
-    json_file_path = r"d:\Project\uvProjects\ImageClassifier\logs\statistics.json"
+    json_file_path = rf"{base_directory}\statistics.json"
     # 输出 Excel 文件路径
-    output_excel_path = r"d:\Project\uvProjects\ImageClassifier\logs\statistics.xlsx"
+    output_excel_path = rf"{base_directory}\statistics.xlsx"
 
     # 转换并保存
     json_to_excel(json_file_path, output_excel_path)
