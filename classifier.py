@@ -3,6 +3,49 @@ import re
 import shutil
 import argparse
 
+FLORIDA_CATE = {
+    0: "sorrel",
+    1: "parachute",
+    2: "iron",
+    3: "anemone fish",
+    4: "espresso maker",
+    5: "coffee mug",
+    6: "mountain bike",
+    7: "revolver",
+    8: "giant panda",
+    9: "daisy",
+    10: "canoe",
+    11: "lycaenid",
+    12: "German shepherd",
+    13: "running shoe",
+    14: "jack-o-lantern",
+    15: "cellular telephone",
+    16: "golf ball",
+    17: "desktop computer",
+    18: "broom",
+    19: "pizza",
+    20: "missile",
+    21: "capuchin",
+    22: "pool table",
+    23: "mailbag",
+    24: "convertibal",
+    25: "folding chair",
+    26: "pajama",
+    27: "mitten",
+    28: "electric guitar",
+    29: "reflex camera",
+    30: "grand piano",
+    31: "mountain tent",
+    32: "banana",
+    33: "bolete",
+    34: "watch",
+    35: "African elephant",
+    36: "airliner",
+    37: "electric locomotive",
+    38: "radio telescope",
+    39: "Egyptian cat",
+}
+
 # 定义类别名称映射表
 CATEGORIES = {
     0: "German shepherd",  # 德国牧羊犬
